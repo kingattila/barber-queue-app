@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Barber Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>✂️ Barber Queue Dashboard</h1>
+
+    <ul id="queueList"></ul>
+
+    <button id="nextBtn">Next Customer</button>
+  </div>
+
+  <script type="module">
+    import { supabase } from './supabase.js'
+
+    const queueList = document.getElementById('queueList')
+    const nextBtn = document.getElementById('nextBtn')
+
+    async function loadQueue() {
+      const { data, error } = await supabase
+        .from('queue')
+        .select('*')
+        .eq('status', 'waiting')
+        .order('joined_at', { ascending: true })
+
+      if (error) {
+        console.error('Error loading queue:', error)
+        return
+      }
+
+      queueList.innerHTML = ''
+      data.forEach((entry, index) => {
+        const li = document.createElement('li')
+        li.textContent = `${index + 1}. ${entry.name}`
+        queueList.appendChild(li)
+      })
+    }
+
+    nextBtn.addEventListener('click', async () => {
+      // Get the first person in the queue
+      const { data, error } = await supabase
+        .from('queue')
+        .select('*')
+        .eq('status', 'waiting')
+        .order('joined_at', { ascending: true })
+        .limit(1)
+
+      if (error || data.length === 0) {
+        alert('Queue is empty or error occurred.')
+        return
+      }
+
+      const firstPerson = data[0]
+
+      // Update their status to "served"
+      const { error: updateError } = await supabase
+        .from('queue')
+        .update({ status: 'served' })
+        .eq('id', firstPerson.id)
+
+      if (updateError) {
+        alert('Failed to update queue.')
+        return
+      }
+
+      loadQueue()
+    })
+
+    // Live updates
+    supabase
+      .channel('queue-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'queue' },
+        (payload) => {
+          loadQueue()
+        }
+      )
+      .subscribe()
+
+    loadQueue()
+  </script>
+</body>
+</html>

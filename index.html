@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Join the Queue</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>💈 Welcome to the Barbershop</h1>
+    <p>Tap below to join the live queue:</p>
+
+    <input type="text" id="nameInput" placeholder="Enter your name">
+    <button id="joinBtn">Join Queue</button>
+
+    <div id="statusSection" style="display:none;">
+      <h2>You're in the queue ✅</h2>
+      <p>Your position: <span id="queuePosition">Loading...</span></p>
+    </div>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
