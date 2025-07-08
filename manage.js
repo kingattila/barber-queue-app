@@ -8,11 +8,11 @@ let barbershopId = null
 
 // Step 1: Load barbershop ID based on slug (e.g., "fadelab")
 async function getBarbershopId() {
-  const { data, error } = await supabase
-    .from('barbershops')
-    .select('id')
-    .eq('slug', 'fadelab')
-    .single()
+ const { data, error } = await supabase
+  .from("barbershops")
+  .select("*")
+  .eq("slug", "fadelab")
+  .single();
 
   if (error) {
     console.error('Failed to load barbershop ID:', error)
