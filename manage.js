@@ -4,13 +4,13 @@ const barberList = document.getElementById('barberList')
 const addBarberForm = document.getElementById('addBarberForm')
 const barberNameInput = document.getElementById('barberName')
 
-let shopId = null
+let barbershopId = null
 
-// Step 1: Load barbershop ID based on slug (e.g., "fadelab")
+// Load barbershop ID using slug
 async function getBarbershopId() {
   const { data, error } = await supabase
     .from("barbershops")
-    .select("id")
+    .select("*")
     .eq("slug", "fadelab")
     .single()
 
@@ -22,17 +22,18 @@ async function getBarbershopId() {
   return data.id
 }
 
-// Step 2: Load barbers from Supabase
+// Load barbers
 async function loadBarbers() {
   barberList.innerHTML = 'Loading barbers...'
 
   const { data: barbers, error } = await supabase
     .from('barbers')
     .select('*')
-    .eq('shop_id', shopId)
+    .eq('shop_id', barbershopId)
 
   if (error) {
     console.error('Error loading barbers:', error)
+    barberList.innerHTML = 'Failed to load barbers.'
     return
   }
 
@@ -53,10 +54,16 @@ async function loadBarbers() {
     barberList.appendChild(container)
   }
 
-  // Attach event listeners for toggle and remove
+  attachEventListeners()
+}
+
+// Attach button click events
+function attachEventListeners() {
   document.querySelectorAll('.toggleStatus').forEach(button =>
     button.addEventListener('click', async (e) => {
       const id = e.target.dataset.id
+
+      // Get current status from text instead of data-attribute (more reliable)
       const currentStatus = e.target.textContent === 'Deactivate' ? 'active' : 'inactive'
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
 
@@ -96,7 +103,7 @@ async function loadBarbers() {
   )
 }
 
-// Step 3: Handle form submission to add new barber
+// Form to add barber
 addBarberForm.addEventListener('submit', async (e) => {
   e.preventDefault()
   const name = barberNameInput.value.trim()
@@ -104,7 +111,7 @@ addBarberForm.addEventListener('submit', async (e) => {
 
   const { error } = await supabase
     .from('barbers')
-    .insert([{ name, shop_id: shopId, status: 'active' }])
+    .insert([{ name, shop_id: barbershopId, status: 'active' }])
 
   if (error) {
     console.error('Error adding barber:', error)
@@ -116,9 +123,9 @@ addBarberForm.addEventListener('submit', async (e) => {
   loadBarbers()
 })
 
-// Initialize page
+// Init
 getBarbershopId().then(id => {
   if (!id) return
-  shopId = id
+  barbershopId = id
   loadBarbers()
 })
