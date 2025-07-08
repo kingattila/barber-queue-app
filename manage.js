@@ -4,51 +4,121 @@ const barberList = document.getElementById('barberList')
 const addBarberForm = document.getElementById('addBarberForm')
 const barberNameInput = document.getElementById('barberName')
 
-async function loadBarbers() {
-  const { data, error } = await supabase.from('barbers').select('*')
-  if (error) {
-    console.error('Failed to load barbers:', error)
-    barberList.textContent = 'Error loading barbers'
-    return
-  }
+let barbershopId = null
 
-  barberList.innerHTML = ''
-  data.forEach((barber) => {
-    const div = document.createElement('div')
-    div.textContent = `${barber.name} (${barber.status})`
-    barberList.appendChild(div)
-  })
-}
-
-addBarberForm.addEventListener('submit', async (e) => {
-  e.preventDefault()
-  const name = barberNameInput.value.trim()
-  if (!name) return alert('Please enter a name.')
-
-  const { data: shopData, error: shopError } = await supabase
+// Step 1: Load barbershop ID based on slug (e.g., "fadelab")
+async function getBarbershopId() {
+  const { data, error } = await supabase
     .from('barbershops')
     .select('id')
     .eq('slug', 'fadelab')
     .single()
 
-  if (shopError) {
-    console.error('Error finding barbershop:', shopError)
-    return alert('Could not find barbershop.')
+  if (error) {
+    console.error('Failed to load barbershop ID:', error)
+    return null
   }
 
-  const { error } = await supabase.from('barbers').insert({
-    name,
-    shop_id: shopData.id,
-    status: 'active'
-  })
+  return data.id
+}
+
+// Step 2: Load barbers from Supabase
+async function loadBarbers() {
+  barberList.innerHTML = 'Loading barbers...'
+
+  const { data: barbers, error } = await supabase
+    .from('barbers')
+    .select('*')
+    .eq('barbershop_id', barbershopId)
+
+  if (error) {
+    console.error('Error loading barbers:', error)
+    return
+  }
+
+  barberList.innerHTML = ''
+
+  for (const barber of barbers) {
+    const container = document.createElement('div')
+    container.className = 'barber-block'
+
+    container.innerHTML = `
+      <h3>${barber.name}</h3>
+      <p>Status: ${barber.status}</p>
+      <button class="toggleStatus" data-id="${barber.id}">
+        ${barber.status === 'active' ? 'Deactivate' : 'Activate'}
+      </button>
+      <button class="removeBarber" data-id="${barber.id}">❌ Remove</button>
+    `
+    barberList.appendChild(container)
+  }
+
+  // Attach event listeners for toggle and remove
+  document.querySelectorAll('.toggleStatus').forEach(button =>
+    button.addEventListener('click', async (e) => {
+      const id = e.target.dataset.id
+      const currentStatus = e.target.textContent === 'Deactivate' ? 'active' : 'inactive'
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
+
+      const { error } = await supabase
+        .from('barbers')
+        .update({ status: newStatus })
+        .eq('id', id)
+
+      if (error) {
+        console.error('Error toggling status:', error)
+        return
+      }
+
+      loadBarbers()
+    })
+  )
+
+  document.querySelectorAll('.removeBarber').forEach(button =>
+    button.addEventListener('click', async (e) => {
+      const id = e.target.dataset.id
+      const confirmed = confirm('Are you sure you want to delete this barber?')
+
+      if (!confirmed) return
+
+      const { error } = await supabase
+        .from('barbers')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        console.error('Error removing barber:', error)
+        return
+      }
+
+      loadBarbers()
+    })
+  )
+}
+
+// Step 3: Handle form submission to add new barber
+addBarberForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const name = barberNameInput.value.trim()
+  if (!name) return
+
+  const { error } = await supabase
+    .from('barbers')
+    .insert([{ name, barbershop_id: barbershopId, status: 'active' }])
 
   if (error) {
     console.error('Error adding barber:', error)
-    return alert('Failed to add barber.')
+    alert('Failed to add barber.')
+    return
   }
 
   barberNameInput.value = ''
   loadBarbers()
 })
 
-loadBarbers()
+// Initialize page
+getBarbershopId().then(id => {
+  if (!id) return
+  barbershopId = id
+  loadBarbers()
+})
