@@ -58,6 +58,7 @@ async function loadQueue() {
     .from('queue_entries')
     .select('*')
     .eq('shop_id', barbershopId)
+    .eq('status', 'waiting')
     .or(`requested_barber_id.eq.${selectedBarberId},requested_barber_id.is.null`)
     .order('joined_at', { ascending: true })
 
@@ -66,6 +67,8 @@ async function loadQueue() {
     nextCustomerDiv.textContent = 'Error loading queue'
     return
   }
+
+  console.log('Queue entries loaded:', entries)
 
   const next = entries[0]
 
