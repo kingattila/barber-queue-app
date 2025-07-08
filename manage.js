@@ -46,7 +46,7 @@ async function loadBarbers() {
     container.innerHTML = `
       <h3>${barber.name}</h3>
       <p>Status: ${barber.status}</p>
-      <button class="toggleStatus" data-id="${barber.id}">
+      <button class="toggleStatus" data-id="${barber.id}" data-status="${barber.status}">
         ${barber.status === 'active' ? 'Deactivate' : 'Activate'}
       </button>
       <button class="removeBarber" data-id="${barber.id}">❌ Remove</button>
@@ -61,11 +61,13 @@ async function loadBarbers() {
 function attachEventListeners() {
   document.querySelectorAll('.toggleStatus').forEach(button =>
     button.addEventListener('click', async (e) => {
-      const id = e.target.dataset.id
+      e.preventDefault()
 
-      // Get current status from text instead of data-attribute (more reliable)
-      const currentStatus = e.target.textContent === 'Deactivate' ? 'active' : 'inactive'
+      const id = e.target.dataset.id
+      const currentStatus = e.target.dataset.status
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
+
+      console.log("Toggling barber ID:", id, "from", currentStatus, "to", newStatus)
 
       const { error } = await supabase
         .from('barbers')
@@ -74,6 +76,7 @@ function attachEventListeners() {
 
       if (error) {
         console.error('Error toggling status:', error)
+        alert("Failed to update status.")
         return
       }
 
@@ -83,9 +86,10 @@ function attachEventListeners() {
 
   document.querySelectorAll('.removeBarber').forEach(button =>
     button.addEventListener('click', async (e) => {
+      e.preventDefault()
+
       const id = e.target.dataset.id
       const confirmed = confirm('Are you sure you want to delete this barber?')
-
       if (!confirmed) return
 
       const { error } = await supabase
@@ -95,6 +99,7 @@ function attachEventListeners() {
 
       if (error) {
         console.error('Error removing barber:', error)
+        alert("Failed to delete barber.")
         return
       }
 
@@ -103,7 +108,7 @@ function attachEventListeners() {
   )
 }
 
-// Form to add barber
+// Handle add barber form
 addBarberForm.addEventListener('submit', async (e) => {
   e.preventDefault()
   const name = barberNameInput.value.trim()
