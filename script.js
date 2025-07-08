@@ -1,64 +1,113 @@
-// script.js
 import { supabase } from './supabase.js'
 
-const joinBtn = document.getElementById('joinBtn')
-const nameInput = document.getElementById('nameInput')
-const statusSection = document.getElementById('statusSection')
-const queuePosition = document.getElementById('queuePosition')
+const barberSelect = document.getElementById('barberSelect')
+const nextBtn = document.getElementById('nextBtn')
+const nextCustomer = document.getElementById('nextCustomer')
+const addBarberForm = document.getElementById('add-barber-form')
+const newBarberNameInput = document.getElementById('newBarberName')
 
-let userId = null
+let selectedBarber = null
+let barbershopId = null
 
-joinBtn.addEventListener('click', async () => {
-  const name = nameInput.value.trim()
-  if (!name) {
-    alert('Please enter your name.')
+// Load active barbers
+async function loadBarbers() {
+  // Step 1: Get the barbershop ID (for now we're using Fadelab)
+  const { data: shops, error: shopError } = await supabase
+    .from('barbershops')
+    .select('*')
+    .eq('slug', 'fadelab')
+    .single()
+
+  if (shopError || !shops) {
+    console.error('Failed to load barbershop:', shopError)
     return
   }
 
-  // Add user to queue
-  const { data, error } = await supabase
-    .from('queue')
-    .insert([{ name, status: 'waiting' }])
-    .select()
+  barbershopId = shops.id
 
-  if (error || !data || !data[0]) {
-    alert('Something went wrong. Please try again.')
-    console.error(error || 'Insert failed, no data returned')
+  // Step 2: Load barbers linked to that shop with status = active
+  const { data: barbers, error } = await supabase
+    .from('barbers')
+    .select('*')
+    .eq('shop_id', barbershopId)
+    .eq('status', 'active')
+
+  if (error) {
+    console.error('Error loading barbers:', error)
     return
   }
 
-  userId = data[0].id
-  console.log("User successfully added. ID:", userId)
+  barberSelect.innerHTML = ''
+  for (const barber of barbers) {
+    const option = document.createElement('option')
+    option.value = barber.id
+    option.textContent = barber.name
+    barberSelect.appendChild(option)
+  }
 
-  nameInput.style.display = 'none'
-  joinBtn.style.display = 'none'
-  statusSection.style.display = 'block'
+  selectedBarber = barbers[0]?.id || null
+  if (selectedBarber) {
+    nextBtn.disabled = false
+    getNextCustomer()
+  }
+}
 
-  updatePosition()
-  startPolling()
+// On change barber
+barberSelect.addEventListener('change', () => {
+  selectedBarber = barberSelect.value
+  getNextCustomer()
 })
 
-async function updatePosition() {
-  const { data, error } = await supabase
-    .from('queue')
+// Press "Next" button
+nextBtn.addEventListener('click', async () => {
+  if (!selectedBarber) return
+
+  const { data: queue, error } = await supabase
+    .from('queue_entries')
     .select('*')
     .eq('status', 'waiting')
     .order('joined_at', { ascending: true })
 
   if (error) {
-    console.error(error)
+    console.error('Error fetching queue:', error)
     return
   }
-console.log("Queue data:", data, "Your ID:", userId)
 
-  const position = data.findIndex(item => item.id === userId)
-  if (position !== -1) {
-    queuePosition.innerText = position + 1
-  } else {
-    queuePosition.innerText = 'Not found'
+  const next = queue.find(entry =>
+    !entry.requested_barber_id || entry.requested_barber_id === selectedBarber
+  )
+
+  if (!next) {
+    nextCustomer.textContent = 'No one in the queue'
+    return
   }
-}
 
-function startPolling() {
-  setInterval(updatePosition, 5000) // Update every 5 seconds
-}
+  await supabase
+    .from('queue_entries')
+    .update({ status: 'completed' })
+    .eq('id', next.id)
+
+  nextCustomer.textContent = `${next.customer_name}`
+})
+
+// Add new barber
+addBarberForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+
+  const newName = newBarberNameInput.value.trim()
+  if (!newName) return alert('Enter a name')
+
+  const { error } = await supabase
+    .from('barbers')
+    .insert({ name: newName, shop_id: barbershopId, status: 'active' })
+
+  if (error) {
+    console.error('Error adding barber:', error)
+    return alert('Failed to add barber')
+  }
+
+  newBarberNameInput.value = ''
+  await loadBarbers()
+})
+
+loadBarbers()
