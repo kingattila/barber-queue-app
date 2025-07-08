@@ -2,31 +2,72 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Barber Dashboard - Fade Lab</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Barber Dashboard</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    select, button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    #statusDisplay {
+      margin: 15px 0;
+      font-weight: bold;
+      text-align: center;
+      color: #2b7a0b;
+    }
+
+    .queue-entry {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .queue-entry p {
+      margin: 4px 0;
+    }
+
+    #queueContainer p {
+      text-align: center;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>💈 Barber Dashboard</h1>
+  <h1>Barber Dashboard</h1>
 
-    <label for="barberSelect">Select Your Name:</label>
-    <select id="barberSelect">
-      <option disabled selected>Loading barbers...</option>
-    </select>
+  <label for="barberSelect">Select Your Name:</label>
+  <select id="barberSelect">
+    <option value="">Loading...</option>
+  </select>
 
-    <div id="queueContainer" style="margin-top: 20px;">
-      <h2>Next Customer:</h2>
-      <div id="nextCustomer">Please select your name above.</div>
-      <button id="nextBtn" disabled>Next</button>
-    </div>
+  <div id="statusDisplay"></div>
 
-    <div style="margin-top: 30px;">
-      <a href="/manage" style="text-decoration: none;">
-        <button>Manage Barbers</button>
-      </a>
-    </div>
+  <button id="nextCustomerBtn">Next Customer</button>
+
+  <h2>Current Queue</h2>
+  <div id="queueContainer">
+    <p>Loading queue...</p>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <script type="module" src="./script.js"></script>
 </body>
 </html>

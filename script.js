@@ -1,103 +1,121 @@
 import { supabase } from './supabase.js'
 
 const barberSelect = document.getElementById('barberSelect')
-const nextCustomerDiv = document.getElementById('nextCustomer')
-const nextBtn = document.getElementById('nextBtn')
+const queueContainer = document.getElementById('queueContainer')
+const nextCustomerBtn = document.getElementById('nextCustomerBtn')
+const statusDisplay = document.getElementById('statusDisplay')
 
-let currentBarberId = null
+let selectedBarberId = null
+let selectedBarberName = null
 
-// Load all active barbers
+// Load active barbers
 async function loadBarbers() {
-  const { data: barbers, error } = await supabase
+  const { data, error } = await supabase
     .from('barbers')
-    .select('*')
+    .select('id, name, status')
     .eq('status', 'active')
 
   if (error) {
     console.error('Error loading barbers:', error)
-    barberSelect.innerHTML = `<option disabled selected>Failed to load</option>`
     return
   }
 
-  barberSelect.innerHTML = `<option disabled selected>Select your name</option>`
-
-  for (const barber of barbers) {
+  barberSelect.innerHTML = '<option value="">Select your name</option>'
+  data.forEach(barber => {
     const option = document.createElement('option')
     option.value = barber.id
     option.textContent = barber.name
     barberSelect.appendChild(option)
-  }
+  })
 }
 
-// Load next customer for the current barber
-async function loadNextCustomer() {
-  if (!currentBarberId) {
-    nextCustomerDiv.textContent = 'Please select your name above.'
-    nextBtn.disabled = true
+// Load the combined queue (own + any)
+async function loadQueue() {
+  if (!selectedBarberId) {
+    queueContainer.innerHTML = '<p>Please select your name first.</p>'
     return
   }
 
-  const { data, error } = await supabase
+  const { data: queue, error } = await supabase
     .from('queue_entries')
     .select('*')
     .eq('status', 'waiting')
-    .or(`requested_barber_id.eq.${currentBarberId},requested_barber_id.is.null`)
-    .order('created_at', { ascending: true })
-    .limit(1)
+    .in('requested_barber_id', [null, selectedBarberId])
+    .order('joined_at', { ascending: true })
 
   if (error) {
-    console.error('Error loading next customer:', error)
-    nextCustomerDiv.textContent = 'Failed to load queue'
-    nextBtn.disabled = true
+    console.error('Error loading queue:', error)
+    queueContainer.innerHTML = 'Failed to load queue.'
     return
   }
 
-  if (data.length === 0) {
-    nextCustomerDiv.textContent = 'No one in the queue'
-    nextBtn.disabled = true
-  } else {
-    nextCustomerDiv.textContent = `${data[0].customer_name}`
-    nextBtn.disabled = false
+  if (!queue || queue.length === 0) {
+    queueContainer.innerHTML = '<p>No one is in the queue.</p>'
+    return
   }
+
+  queueContainer.innerHTML = ''
+  queue.forEach((entry, index) => {
+    const div = document.createElement('div')
+    div.className = 'queue-entry'
+    div.innerHTML = `
+      <p><strong>${entry.customer_name}</strong></p>
+      <p>Joined at: ${new Date(entry.joined_at).toLocaleTimeString()}</p>
+      <p>Position: ${index + 1}</p>
+      <p>Type: ${entry.requested_barber_id ? 'Requested You' : 'Any Barber'}</p>
+    `
+    queueContainer.appendChild(div)
+  })
 }
 
-// Mark next customer as served
-async function handleNext() {
-  const { data, error } = await supabase
+// Serve next customer
+async function serveNextCustomer() {
+  if (!selectedBarberId) return alert('Select your name first.')
+
+  const { data: queue, error } = await supabase
     .from('queue_entries')
     .select('*')
     .eq('status', 'waiting')
-    .or(`requested_barber_id.eq.${currentBarberId},requested_barber_id.is.null`)
-    .order('created_at', { ascending: true })
+    .in('requested_barber_id', [null, selectedBarberId])
+    .order('joined_at', { ascending: true })
     .limit(1)
 
-  if (error || data.length === 0) {
-    console.error('Error getting next customer to update:', error)
+  if (error || !queue || queue.length === 0) {
+    alert('No one to serve.')
     return
   }
 
-  const customerId = data[0].id
+  const next = queue[0]
 
+  // Mark as served and assign the barber
   const { error: updateError } = await supabase
     .from('queue_entries')
-    .update({ status: 'served' })
-    .eq('id', customerId)
+    .update({
+      status: 'served',
+      requested_barber_id: selectedBarberId
+    })
+    .eq('id', next.id)
 
   if (updateError) {
-    console.error('Error updating customer:', updateError)
+    console.error('Error serving customer:', updateError)
+    alert('Failed to serve next customer.')
     return
   }
 
-  loadNextCustomer()
+  statusDisplay.textContent = `✅ Now serving: ${next.customer_name}`
+  loadQueue()
 }
 
-// Barber selection change
-barberSelect.addEventListener('change', (e) => {
-  currentBarberId = e.target.value
-  loadNextCustomer()
+// When barber selects their name
+barberSelect.addEventListener('change', () => {
+  selectedBarberId = barberSelect.value
+  selectedBarberName = barberSelect.options[barberSelect.selectedIndex].text
+  statusDisplay.textContent = ''
+  loadQueue()
 })
 
-nextBtn.addEventListener('click', handleNext)
+// Button: Serve next
+nextCustomerBtn.addEventListener('click', serveNextCustomer)
 
-// Initialize
+// Init
 loadBarbers()
