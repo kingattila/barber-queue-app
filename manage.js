@@ -8,11 +8,11 @@ let barbershopId = null
 
 // Step 1: Load barbershop ID based on slug (e.g., "fadelab")
 async function getBarbershopId() {
- const { data, error } = await supabase
-  .from("barbershops")
-  .select("*")
-  .eq("slug", "fadelab")
-  .single();
+  const { data, error } = await supabase
+    .from("barbershops table")  // <-- updated to match your actual table name
+    .select("*")
+    .eq("slug", "fadelab")
+    .single()
 
   if (error) {
     console.error('Failed to load barbershop ID:', error)
@@ -104,7 +104,13 @@ addBarberForm.addEventListener('submit', async (e) => {
 
   const { error } = await supabase
     .from('barbers')
-    .insert([{ name, barbershop_id: barbershopId, status: 'active' }])
+    .insert([
+      {
+        name,
+        barbershop_id: barbershopId,
+        status: 'active'
+      }
+    ])
 
   if (error) {
     console.error('Error adding barber:', error)
