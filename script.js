@@ -21,13 +21,15 @@ joinBtn.addEventListener('click', async () => {
     .insert([{ name, status: 'waiting' }])
     .select()
 
-  if (error) {
+  if (error || !data || !data[0]) {
     alert('Something went wrong. Please try again.')
-    console.error(error)
+    console.error(error || 'Insert failed, no data returned')
     return
   }
 
   userId = data[0].id
+  console.log("User successfully added. ID:", userId)
+
   nameInput.style.display = 'none'
   joinBtn.style.display = 'none'
   statusSection.style.display = 'block'
@@ -47,6 +49,7 @@ async function updatePosition() {
     console.error(error)
     return
   }
+console.log("Queue data:", data, "Your ID:", userId)
 
   const position = data.findIndex(item => item.id === userId)
   if (position !== -1) {
