@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Barber Dashboard - Fade Lab</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
   <div class="container">
@@ -17,13 +17,16 @@
     <div id="queueContainer">
       <h2>Next Customer:</h2>
       <div id="nextCustomer">No one in the queue</div>
-      <p class="helper-text">Press Serve once you’ve called the customer.</p>
-      <button id="nextBtn" disabled>Serve</button>
+      <p class="helper-text">Use the buttons below when ready.</p>
+
+      <button id="nextBtn" disabled>✅ Serve</button>
+      <button id="skipBtn" disabled>⏭️ Skip</button>
+      <button id="removeBtn" disabled>❌ Remove</button>
     </div>
 
     <a href="/manage" id="manageLink">🔧 Manage Barbers</a>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <script type="module" src="script.js?v=3"></script>
 </body>
 </html>

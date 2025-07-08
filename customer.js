@@ -20,7 +20,6 @@ async function loadBarbers() {
 
   barberList.innerHTML = ''
 
-  // General (any barber) queue
   const generalQueueCount = await getQueueCount(null)
 
   const generalDiv = document.createElement('div')
@@ -32,7 +31,6 @@ async function loadBarbers() {
   `
   barberList.appendChild(generalDiv)
 
-  // Specific barbers
   for (const barber of barbers) {
     const count = await getQueueCount(barber.id)
     const block = document.createElement('div')
@@ -69,7 +67,7 @@ async function getQueueCount(barberId) {
   return count
 }
 
-// Join queue for a specific or any barber
+// ✅ Join queue with shop_id included
 window.joinQueue = async function (barberId) {
   const name = nameInput.value.trim()
   if (!name) {
@@ -77,7 +75,6 @@ window.joinQueue = async function (barberId) {
     return
   }
 
-  // 🔑 Get shop ID from 'fadelab'
   const { data: shop, error: shopError } = await supabase
     .from('barbershops')
     .select('id')
@@ -90,11 +87,13 @@ window.joinQueue = async function (barberId) {
     return
   }
 
+  console.log("Joining queue with shop_id:", shop.id)
+
   const { error } = await supabase.from('queue_entries').insert({
     customer_name: name,
     requested_barber_id: barberId,
     status: 'waiting',
-    shop_id: shop.id  // ✅ Assign the correct shop_id
+    shop_id: shop.id // ✅ this is what was missing
   })
 
   if (error) {
