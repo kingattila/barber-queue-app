@@ -4,13 +4,13 @@ const barberList = document.getElementById('barberList')
 const addBarberForm = document.getElementById('addBarberForm')
 const barberNameInput = document.getElementById('barberName')
 
-let barbershopId = null
+let shopId = null
 
 // Step 1: Load barbershop ID based on slug (e.g., "fadelab")
 async function getBarbershopId() {
   const { data, error } = await supabase
-    .from("barbershops table")  // <-- updated to match your actual table name
-    .select("*")
+    .from("barbershops")
+    .select("id")
     .eq("slug", "fadelab")
     .single()
 
@@ -29,7 +29,7 @@ async function loadBarbers() {
   const { data: barbers, error } = await supabase
     .from('barbers')
     .select('*')
-    .eq('barbershop_id', barbershopId)
+    .eq('shop_id', shopId)
 
   if (error) {
     console.error('Error loading barbers:', error)
@@ -104,13 +104,7 @@ addBarberForm.addEventListener('submit', async (e) => {
 
   const { error } = await supabase
     .from('barbers')
-    .insert([
-      {
-        name,
-        barbershop_id: barbershopId,
-        status: 'active'
-      }
-    ])
+    .insert([{ name, shop_id: shopId, status: 'active' }])
 
   if (error) {
     console.error('Error adding barber:', error)
@@ -125,6 +119,6 @@ addBarberForm.addEventListener('submit', async (e) => {
 // Initialize page
 getBarbershopId().then(id => {
   if (!id) return
-  barbershopId = id
+  shopId = id
   loadBarbers()
 })
