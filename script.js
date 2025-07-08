@@ -21,6 +21,7 @@ async function loadBarbershopId() {
   }
 
   barbershopId = data.id
+  console.log('Loaded barbershop ID:', barbershopId)
   loadBarbers()
 }
 
@@ -54,6 +55,8 @@ async function loadQueue() {
 
   if (!selectedBarberId) return
 
+  console.log("Loading queue for barber ID:", selectedBarberId)
+
   const { data: entries, error } = await supabase
     .from('queue_entries')
     .select('*')
@@ -68,7 +71,7 @@ async function loadQueue() {
     return
   }
 
-  console.log('Queue entries loaded:', entries)
+  console.log("Queue entries loaded:", entries)
 
   const next = entries[0]
 
@@ -82,18 +85,20 @@ async function loadQueue() {
   nextBtn.dataset.entryId = next.id
 }
 
-// Remove customer from queue
+// Mark customer as served (instead of deleting)
 async function handleNext() {
   const entryId = nextBtn.dataset.entryId
   if (!entryId) return
 
   const { error } = await supabase
     .from('queue_entries')
-    .delete()
+    .update({ status: 'served' })
     .eq('id', entryId)
+    .eq('shop_id', barbershopId)
 
   if (error) {
-    console.error('Failed to remove customer:', error)
+    console.error('Failed to mark customer as served:', error)
+    alert('Failed to update queue.')
     return
   }
 
