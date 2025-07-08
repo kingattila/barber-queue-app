@@ -77,10 +77,24 @@ window.joinQueue = async function (barberId) {
     return
   }
 
+  // 🔑 Get shop ID from 'fadelab'
+  const { data: shop, error: shopError } = await supabase
+    .from('barbershops')
+    .select('id')
+    .eq('slug', 'fadelab')
+    .single()
+
+  if (shopError || !shop) {
+    console.error('Failed to load shop ID:', shopError)
+    alert('Something went wrong. Please try again.')
+    return
+  }
+
   const { error } = await supabase.from('queue_entries').insert({
     customer_name: name,
     requested_barber_id: barberId,
-    status: 'waiting'
+    status: 'waiting',
+    shop_id: shop.id  // ✅ Assign the correct shop_id
   })
 
   if (error) {
