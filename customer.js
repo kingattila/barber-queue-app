@@ -1,70 +1,96 @@
-import { supabase } from './supabase.js';
+import { supabase } from './supabase.js'
 
-const nameInput = document.getElementById('nameInput');
-const barberList = document.getElementById('barberList');
+const nameInput = document.getElementById('nameInput')
+const barberList = document.getElementById('barberList')
 
+// Fetch barbers with status = 'active'
 async function loadBarbers() {
+  barberList.innerHTML = 'Loading barbers...'
+
   const { data: barbers, error } = await supabase
     .from('barbers')
     .select('*')
-    .eq('status', 'active'); // Only show active barbers
+    .eq('status', 'active')
 
   if (error) {
-    console.error('Error loading barbers:', error);
-    return;
+    console.error('Error loading barbers:', error)
+    barberList.innerHTML = 'Failed to load barbers.'
+    return
   }
 
-  const generalQueueCount = await getQueueCount(null);
+  barberList.innerHTML = ''
 
-  const generalDiv = document.createElement('div');
-  generalDiv.className = 'barber-block';
+  // General (any barber) queue
+  const generalQueueCount = await getQueueCount(null)
+
+  const generalDiv = document.createElement('div')
+  generalDiv.className = 'barber-block'
   generalDiv.innerHTML = `
     <h2>🧍 Any Barber</h2>
     <p>Customers ahead: ${generalQueueCount}</p>
     <button onclick="joinQueue(null)">Join</button>
-  `;
-  barberList.appendChild(generalDiv);
+  `
+  barberList.appendChild(generalDiv)
 
+  // Specific barbers
   for (const barber of barbers) {
-    const count = await getQueueCount(barber.id);
-    const block = document.createElement('div');
-    block.className = 'barber-block';
+    const count = await getQueueCount(barber.id)
+    const block = document.createElement('div')
+    block.className = 'barber-block'
     block.innerHTML = `
       <h2>✂️ ${barber.name}</h2>
       <p>Customers ahead: ${count}</p>
       <button onclick="joinQueue('${barber.id}')">Join ${barber.name}</button>
-    `;
-    barberList.appendChild(block);
+    `
+    barberList.appendChild(block)
   }
 }
 
+// Count customers in queue for a given barber (null for any)
 async function getQueueCount(barberId) {
-  const query = supabase
+  let query = supabase
     .from('queue_entries')
-    .select('joined_at, requested_barber_id')
-    .eq('status', 'waiting');
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'waiting')
 
-  const { data, error } = barberId
-    ? await query.or(`requested_barber_id.eq.${barberId},requested_barber_id.is.null`)
-    : await query.eq('requested_barber_id', null);
+  if (barberId === null) {
+    query = query.is('requested_barber_id', null)
+  } else {
+    query = query.eq('requested_barber_id', barberId)
+  }
 
-  if (error) return 0;
-  return data.length;
+  const { count, error } = await query
+
+  if (error) {
+    console.error('Error fetching queue count:', error)
+    return 0
+  }
+
+  return count
 }
 
+// Join queue for a specific or any barber
 window.joinQueue = async function (barberId) {
-  const name = nameInput.value.trim();
-  if (!name) return alert('Please enter your name');
+  const name = nameInput.value.trim()
+  if (!name) {
+    alert('Please enter your name')
+    return
+  }
 
   const { error } = await supabase.from('queue_entries').insert({
     customer_name: name,
     requested_barber_id: barberId,
     status: 'waiting'
-  });
+  })
 
-  if (error) return alert('Something went wrong joining the queue');
-  alert('You’ve been added to the queue!');
-  location.reload();
-};
+  if (error) {
+    console.error('Error joining queue:', error)
+    alert('Something went wrong joining the queue.')
+    return
+  }
 
-loadBarbers();
+  alert('You’ve been added to the queue!')
+  location.reload()
+}
+
+loadBarbers()
