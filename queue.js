@@ -60,22 +60,27 @@ async function loadQueue() {
   queueList.innerHTML = html
 }
 
-// Helper to look up barber name safely
+// Safe: avoids .single() and 406 errors
 async function getBarberName(barberId) {
   if (!barberId) return 'Any Barber'
 
-  const { data, error } = await supabase
-    .from('barbers')
-    .select('name')
-    .eq('id', barberId)
-    .single() // ✅ this avoids the 406 error
+  try {
+    const { data, error } = await supabase
+      .from('barbers')
+      .select('name')
+      .eq('id', barberId)
+      .limit(1) // ✅ Avoid .single()
 
-  if (error || !data) {
-    console.error('Barber fetch error:', error)
+    if (error) {
+      console.error('Barber fetch error:', error)
+      return 'Unknown'
+    }
+
+    return data.length > 0 ? data[0].name : 'Unknown'
+  } catch (err) {
+    console.error('Unexpected barber fetch error:', err)
     return 'Unknown'
   }
-
-  return data.name
 }
 
 // Remove person from queue
