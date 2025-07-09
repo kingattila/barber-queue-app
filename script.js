@@ -5,12 +5,12 @@ const nextCustomerDiv = document.getElementById('nextCustomer')
 const nextBtn = document.getElementById('nextBtn')
 const skipBtn = document.getElementById('skipBtn')
 const removeBtn = document.getElementById('removeBtn')
+const totalCountDiv = document.getElementById('totalCount')
 
 let selectedBarberId = null
 let barbershopId = null
 let currentEntry = null
 
-// Load barbershop ID
 async function loadBarbershopId() {
   const { data, error } = await supabase
     .from('barbershops')
@@ -25,9 +25,9 @@ async function loadBarbershopId() {
 
   barbershopId = data.id
   loadBarbers()
+  loadTotalQueueCount()
 }
 
-// Load barbers into dropdown
 async function loadBarbers() {
   const { data: barbers, error } = await supabase
     .from('barbers')
@@ -50,7 +50,6 @@ async function loadBarbers() {
   }
 }
 
-// Load queue
 async function loadQueue() {
   nextCustomerDiv.textContent = 'Loading...'
   nextBtn.disabled = true
@@ -89,7 +88,22 @@ async function loadQueue() {
   removeBtn.disabled = false
 }
 
-// Handle Serve
+async function loadTotalQueueCount() {
+  const { count, error } = await supabase
+    .from('queue_entries')
+    .select('*', { count: 'exact', head: true })
+    .eq('shop_id', barbershopId)
+    .eq('status', 'waiting')
+
+  if (error) {
+    totalCountDiv.textContent = 'Error loading queue count.'
+    console.error(error)
+    return
+  }
+
+  totalCountDiv.textContent = `Total in queue: ${count}`
+}
+
 async function handleServe() {
   if (!currentEntry) return
 
@@ -106,9 +120,9 @@ async function handleServe() {
   }
 
   loadQueue()
+  loadTotalQueueCount()
 }
 
-// Handle Skip (bump to second)
 async function handleSkip() {
   if (!currentEntry || !currentEntry.secondEntry) {
     alert("Can't skip — no one behind them.")
@@ -133,7 +147,6 @@ async function handleSkip() {
   loadQueue()
 }
 
-// Handle Remove
 async function handleRemove() {
   if (!currentEntry) return
 
@@ -153,9 +166,10 @@ async function handleRemove() {
   }
 
   loadQueue()
+  loadTotalQueueCount()
 }
 
-// Events
+// Event listeners
 barberSelect.addEventListener('change', () => {
   selectedBarberId = barberSelect.value
   loadQueue()

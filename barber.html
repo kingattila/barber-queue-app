@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Barber Dashboard - Fade Lab</title>
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
   <div class="container">
@@ -13,6 +13,10 @@
     <select id="barberSelect">
       <option disabled selected>Loading barbers...</option>
     </select>
+
+    <div id="totalCount" class="helper-text" style="margin-top: 10px;">
+      Total in queue: Loading...
+    </div>
 
     <div id="queueContainer">
       <h2>Next Customer:</h2>
@@ -24,9 +28,10 @@
       <button id="removeBtn" disabled>❌ Remove</button>
     </div>
 
-    <a href="/manage" id="manageLink">🔧 Manage Barbers</a>
+    <a href="/manage" id="manageLink">🔧 Manage Barbers</a><br>
+    <a href="/queue" id="queueLink">📋 Manage Queue</a>
   </div>
 
-  <script type="module" src="script.js?v=3"></script>
+  <script type="module" src="script.js?v=4"></script>
 </body>
 </html>
