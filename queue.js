@@ -46,18 +46,31 @@ async function loadQueue() {
   let html = ''
   for (const entry of entries) {
     const barberName = await getBarberName(entry.requested_barber_id)
-    const joined = new Date(entry.joined_at).toLocaleTimeString()
+    const timeWaiting = getTimeSince(entry.joined_at)
+
     html += `
       <div class="barber-block">
         <strong>${entry.customer_name}</strong><br>
         Barber: ${barberName}<br>
-        Joined: ${joined}<br>
+        Waiting: ${timeWaiting}<br>
         <button onclick="removeEntry('${entry.id}')">❌ Remove</button>
       </div>
     `
   }
 
   queueList.innerHTML = html
+}
+
+// Calculate "time since" in minutes
+function getTimeSince(joinedAt) {
+  const now = new Date()
+  const joined = new Date(joinedAt)
+  const diffMs = now - joined
+  const diffMin = Math.floor(diffMs / 60000)
+
+  if (diffMin < 1) return 'just now'
+  if (diffMin === 1) return '1 minute'
+  return `${diffMin} minutes`
 }
 
 // Safe: avoids .single() and 406 errors
@@ -69,7 +82,7 @@ async function getBarberName(barberId) {
       .from('barbers')
       .select('name')
       .eq('id', barberId)
-      .limit(1) // ✅ Avoid .single()
+      .limit(1)
 
     if (error) {
       console.error('Barber fetch error:', error)
