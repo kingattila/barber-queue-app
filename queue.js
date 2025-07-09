@@ -60,7 +60,7 @@ async function loadQueue() {
   queueList.innerHTML = html
 }
 
-// Helper to look up barber name
+// Helper to look up barber name safely
 async function getBarberName(barberId) {
   if (!barberId) return 'Any Barber'
 
@@ -68,9 +68,13 @@ async function getBarberName(barberId) {
     .from('barbers')
     .select('name')
     .eq('id', barberId)
-    .single()
+    .single() // ✅ this avoids the 406 error
 
-  if (error || !data) return 'Unknown'
+  if (error || !data) {
+    console.error('Barber fetch error:', error)
+    return 'Unknown'
+  }
+
   return data.name
 }
 
