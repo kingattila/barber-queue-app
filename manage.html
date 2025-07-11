@@ -14,11 +14,21 @@
       <button type="submit">Add Barber</button>
     </form>
 
-    <div id="barberList">
-      <!-- List of barbers will be loaded here -->
+    <div id="notifySettings" style="margin-top: 20px;">
+      <h3>⏰ Notification Settings</h3>
+      <label>
+        Notify customers when estimated wait time is under:
+        <input type="number" id="notifyThresholdInput" min="1" value="10" style="width: 60px;" />
+        minutes
+      </label>
+      <button id="updateNotifyBtn">Update</button>
+    </div>
+
+    <div id="barberList" style="margin-top: 30px;">
+      <!-- Barbers will be loaded here -->
     </div>
   </div>
 
-  <script type="module" src="manage.js"></script>
+  <script type="module" src="manage.js?v=2"></script>
 </body>
 </html>
