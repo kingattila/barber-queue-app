@@ -1,33 +1,51 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import twilio from "npm:twilio";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import twilio from 'https://esm.sh/twilio'
 
 serve(async (req) => {
-  console.log("📩 Request received");
-
-  const { to, message } = await req.json();
-
-  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const from = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-  if (!accountSid || !authToken || !from) {
-    console.error("❌ Missing env vars");
-    return new Response("Missing Twilio credentials", { status: 500 });
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
   }
 
-  const client = twilio(accountSid, authToken);
+  // ✅ Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers
+    })
+  }
+
+  // ❌ Only allow POST
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers
+    })
+  }
 
   try {
+    const { to, message } = await req.json()
+
+    const sid = Deno.env.get('TWILIO_ACCOUNT_SID')!
+    const token = Deno.env.get('TWILIO_AUTH_TOKEN')!
+    const from = Deno.env.get('TWILIO_PHONE_NUMBER')!
+
+    const client = twilio(sid, token)
     const result = await client.messages.create({
       body: message,
       from,
-      to,
-    });
+      to
+    })
 
-    console.log("✅ SMS sent", result.sid);
-    return new Response(JSON.stringify({ sid: result.sid }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, sid: result.sid }), {
+      status: 200,
+      headers
+    })
   } catch (err) {
-    console.error("❌ Failed to send SMS:", err);
-    return new Response("Failed to send SMS", { status: 500 });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers
+    })
   }
-});
+})

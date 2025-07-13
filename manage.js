@@ -3,7 +3,6 @@ import { supabase } from './supabase.js'
 const barberList = document.getElementById('barberList')
 const addBarberForm = document.getElementById('addBarberForm')
 const barberNameInput = document.getElementById('barberName')
-
 const notifyInput = document.getElementById('notifyThresholdInput')
 const updateNotifyBtn = document.getElementById('updateNotifyBtn')
 
@@ -56,7 +55,8 @@ async function loadBarbers() {
       <button class="toggleStatus" data-id="${barber.id}" data-status="${barber.status}">
         ${barber.status === 'active' ? 'Deactivate' : 'Activate'}
       </button>
-      <button class="removeBarber" data-id="${barber.id}">❌ Remove</button>
+      <button class="clearBarberQueue" data-id="${barber.id}" style="background-color: red; color: white; margin-top: 10px;">❌ Clear ${barber.name}'s Queue</button>
+      <button class="removeBarber" data-id="${barber.id}" style="margin-top: 10px;">❌ Remove</button>
     `
     barberList.appendChild(container)
   }
@@ -137,6 +137,30 @@ function attachEventListeners() {
       }
 
       alert('Cut time updated.')
+    })
+  )
+
+  document.querySelectorAll('.clearBarberQueue').forEach(button =>
+    button.addEventListener('click', async (e) => {
+      e.preventDefault()
+
+      const barberId = e.target.dataset.id
+      const confirmed = confirm("Clear this barber's queue?")
+      if (!confirmed) return
+
+      const { error } = await supabase
+        .from('queue_entries')
+        .delete()
+        .eq('requested_barber_id', barberId)
+        .eq('shop_id', barbershopId)
+
+      if (error) {
+        console.error('Error clearing queue:', error)
+        alert('Failed to clear queue.')
+        return
+      }
+
+      alert("Queue cleared for this barber.")
     })
   )
 }

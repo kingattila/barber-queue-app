@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js'
 
 const nameInput = document.getElementById('nameInput')
+const phoneInput = document.getElementById('phoneInput')
 const barberList = document.getElementById('barberList')
 
 // Fetch barbers with status = 'active'
@@ -67,11 +68,17 @@ async function getQueueCount(barberId) {
   return count
 }
 
-// ✅ Join queue with shop_id included
+// ✅ Join queue with shop_id and phone number included
 window.joinQueue = async function (barberId) {
   const name = nameInput.value.trim()
-  if (!name) {
-    alert('Please enter your name')
+  const phoneNumber = phoneInput.value.trim()
+  if (!name || !phoneNumber) {
+    alert('Please enter your name and phone number')
+    return
+  }
+  // Basic phone number validation (E.164 format)
+  if (!/^\+\d{10,15}$/.test(phoneNumber)) {
+    alert('Please enter a valid phone number in E.164 format (e.g., +12345678901)')
     return
   }
 
@@ -91,9 +98,11 @@ window.joinQueue = async function (barberId) {
 
   const { error } = await supabase.from('queue_entries').insert({
     customer_name: name,
+    phone_number: phoneNumber,
     requested_barber_id: barberId,
     status: 'waiting',
-    shop_id: shop.id // ✅ this is what was missing
+    shop_id: shop.id,
+    notified: false
   })
 
   if (error) {
