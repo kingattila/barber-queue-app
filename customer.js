@@ -68,15 +68,16 @@ async function getQueueCount(barberId) {
   return count
 }
 
-// ✅ Join queue with shop_id and phone number included
+// ✅ Join queue with SMS confirmation
 window.joinQueue = async function (barberId) {
   const name = nameInput.value.trim()
   const phoneNumber = phoneInput.value.trim()
+
   if (!name || !phoneNumber) {
     alert('Please enter your name and phone number')
     return
   }
-  // Basic phone number validation (E.164 format)
+
   if (!/^\+\d{10,15}$/.test(phoneNumber)) {
     alert('Please enter a valid phone number in E.164 format (e.g., +12345678901)')
     return
@@ -109,6 +110,25 @@ window.joinQueue = async function (barberId) {
     console.error('Error joining queue:', error)
     alert('Something went wrong joining the queue.')
     return
+  }
+
+  // ✅ Send confirmation SMS
+  try {
+    const smsRes = await fetch('https://bbq-sms-service.onrender.com/send-sms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: phoneNumber,
+        message: `Hey ${name}, you're now in the queue at Fade Lab! We'll text you again when you're up next.`
+      })
+    })
+
+    if (!smsRes.ok) {
+      throw new Error('SMS failed to send')
+    }
+  } catch (err) {
+    console.error('❌ Error sending SMS confirmation:', err)
+    // Not fatal — the user is still in the queue
   }
 
   alert('You’ve been added to the queue!')
