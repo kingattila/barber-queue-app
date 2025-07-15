@@ -16,10 +16,7 @@ async function getBarbershopId() {
     .eq("slug", "fadelab")
     .single()
 
-  if (error) {
-    console.error('Failed to load barbershop ID:', error)
-    return null
-  }
+  if (error) return null
 
   return data
 }
@@ -34,7 +31,6 @@ async function loadBarbers() {
     .eq('shop_id', barbershopId)
 
   if (error) {
-    console.error('Error loading barbers:', error)
     barberList.innerHTML = 'Failed to load barbers.'
     return
   }
@@ -79,13 +75,8 @@ function attachEventListeners() {
         .update({ status: newStatus })
         .eq('id', id)
 
-      if (error) {
-        console.error('Error toggling status:', error)
-        alert("Failed to update status.")
-        return
-      }
-
-      loadBarbers()
+      if (!error) loadBarbers()
+      else alert("Failed to update status.")
     })
   )
 
@@ -102,13 +93,8 @@ function attachEventListeners() {
         .delete()
         .eq('id', id)
 
-      if (error) {
-        console.error('Error removing barber:', error)
-        alert("Failed to delete barber.")
-        return
-      }
-
-      loadBarbers()
+      if (!error) loadBarbers()
+      else alert("Failed to delete barber.")
     })
   )
 
@@ -130,13 +116,8 @@ function attachEventListeners() {
         .update({ average_cut_time: cutTime })
         .eq('id', id)
 
-      if (error) {
-        console.error('Failed to update cut time:', error)
-        alert('Failed to update.')
-        return
-      }
-
-      alert('Cut time updated.')
+      if (!error) alert('Cut time updated.')
+      else alert('Failed to update.')
     })
   )
 
@@ -154,13 +135,8 @@ function attachEventListeners() {
         .eq('requested_barber_id', barberId)
         .eq('shop_id', barbershopId)
 
-      if (error) {
-        console.error('Error clearing queue:', error)
-        alert('Failed to clear queue.')
-        return
-      }
-
-      alert("Queue cleared for this barber.")
+      if (!error) alert("Queue cleared for this barber.")
+      else alert('Failed to clear queue.')
     })
   )
 }
@@ -175,14 +151,12 @@ addBarberForm.addEventListener('submit', async (e) => {
     .from('barbers')
     .insert([{ name, shop_id: barbershopId, status: 'active', average_cut_time: 20 }])
 
-  if (error) {
-    console.error('Error adding barber:', error)
+  if (!error) {
+    barberNameInput.value = ''
+    loadBarbers()
+  } else {
     alert('Failed to add barber.')
-    return
   }
-
-  barberNameInput.value = ''
-  loadBarbers()
 })
 
 // Update notify threshold
@@ -199,13 +173,8 @@ updateNotifyBtn.addEventListener('click', async () => {
     .update({ notify_threshold: newThreshold })
     .eq('id', barbershopId)
 
-  if (error) {
-    console.error('Error updating notify threshold:', error)
-    alert('Failed to update.')
-    return
-  }
-
-  alert("Notify threshold updated.")
+  if (!error) alert("Notify threshold updated.")
+  else alert('Failed to update.')
 })
 
 // Init
