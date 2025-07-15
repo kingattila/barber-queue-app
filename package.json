@@ -2,8 +2,12 @@
   "name": "bbqapp",
   "version": "1.0.0",
   "main": "customer.js",
+  "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "send-sms": "node send-sms.js",
+    "dev": "vercel dev",
+    "build": "vercel build",
+    "deploy": "vercel deploy"
   },
   "repository": {
     "type": "git",
@@ -23,6 +27,5 @@
     "express": "^5.1.0",
     "node-fetch": "^3.3.2",
     "twilio": "^5.7.3"
-  },
-  "description": ""
+  }
 }
